@@ -60,7 +60,7 @@
         w: line.w,
         h: 200,
         _move: function () {
-          this.y = ball.y;
+          this.y = ball.y - this.h / 2;
         },
 
         draw: function () {
@@ -77,8 +77,15 @@
 
       // Desenhar o Placar
       const score = {
-        human: 1,
-        computer: 2,
+        human: 0,
+        computer: 0,
+        increaseHuman: function () {
+          this.human++;
+        },
+        increaseComputer: function () {
+          this.computer++;
+        },
+
         draw() {
           canvasCtx.font = "bold 72px Arial";
           canvasCtx.textAlign = "center";
@@ -91,21 +98,69 @@
 
       // Desenhar a Bola
       const ball = {
-        x: 160,
-        y: 200,
+        x: 0,
+        y: 0,
         r: 20,
         speed: 5,
-        _move: function () {
-          this.x += 1 * this.speed;
-          this.y += 1;
+        directionX: 1,
+        directionY: 1,
+
+        _calcPosition: function () {
+          // Verifica se o jogador 1 fez um ponto (x > largura do campo)
+          if (this.x > field.w - this.r - rightPaddle.w - gapX) {
+            // Verifica se a raquete direita está na posição y da bola
+            if (
+              this.y + this.r > rightPaddle.y &&
+              this.y - this.r < rightPaddle.y + rightPaddle.h
+            ) {
+              //  Rebate a bola invertendo o sinal de x
+              this.reverseX();
+            } else {
+              //  Pontuar o jogador 1
+              score.increaseHuman();
+              this._pointUp();
+            }
+          }
+
+          // Verifica as laterais (Superior e Inferior) do campo
+          if (
+            (this.y - this.r < 0 && this.directionY < 0) ||
+            (this.y > field.h - this.r && this.directionY > 0)
+          ) {
+            // Rebate a bola invertendo o sinal do eixo Y
+            this._reverseY();
+          }
         },
+
+        // Colisão da bola e paredes
+        _reverseX: function () {
+          this.directionX *= -1;
+        },
+        _reverseY: function () {
+          // 1 * -1 = -1
+          // -1 * -1 = 1
+          this.directionY *= -1;
+        },
+
+        // Retorna bola ao centro do campo, após pontuar
+        _pointUp: function () {
+          this.x = field.w / 2;
+          this.y = field.h / 2;
+          this.directionX = -this.directionX;
+        },
+        _move: function () {
+          this.x += this.directionX * this.speed;
+          this.y += this.directionY * this.speed;
+        },
+
         draw: function () {
+          this._move();
+          this._calcPosition();
+
           canvasCtx.fillStyle = "#ffffff";
           canvasCtx.beginPath();
           canvasCtx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
           canvasCtx.fill();
-
-          this._move();
         },
       };
 
